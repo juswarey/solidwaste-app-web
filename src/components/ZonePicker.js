@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
-import { api } from '../api';
+import { getZones } from '../data/resident';
 import { colors, type } from '../theme';
 import { Chip } from './ui';
 
@@ -10,7 +10,7 @@ export default function ZonePicker({ value, onChange }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    api('zones.php', { auth: false }).then(setZones).catch((e) => setError(e.message));
+    getZones().then(setZones).catch((e) => setError(e.message));
   }, []);
 
   return (

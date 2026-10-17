@@ -3,6 +3,7 @@ import { Text, View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { DEFAULT_REGION } from '../config';
 import { useApi } from '../hooks';
+import { getTrucks } from '../data/resident';
 import { Card, Screen, ScreenTitle, StateView } from '../components/ui';
 import { colors, radius, type } from '../theme';
 import { timeAgo } from '../utils/schedule';
@@ -23,7 +24,7 @@ function regionFor(points) {
 
 export default function TruckScreen() {
   // Refreshes the truck position every 15 seconds while this tab is open.
-  const { data, error, loading, reload } = useApi('truck_location.php', { pollMs: 15000 });
+  const { data, error, loading, reload } = useApi(getTrucks, { pollMs: 15000 });
 
   const region = useMemo(
     () => regionFor([...(data?.route_path ?? []), ...(data?.trucks ?? [])]),

@@ -17,14 +17,27 @@ export function fmtDate(d) {
   return `${MONTHS[d.getMonth()]} ${d.getDate()}`;
 }
 
-/** MySQL "2026-10-07 14:30:00" -> Date */
-export function parseMysql(ts) {
+/** Postgres timestamp -> Date. Timestamps without a timezone are treated as UTC. */
+export function parseTs(ts) {
   if (!ts) return null;
-  return new Date(String(ts).replace(' ', 'T'));
+  let s = String(ts).replace(' ', 'T');
+  if (!/(Z|[+-]\d{2}(:?\d{2})?)$/.test(s)) s += 'Z';
+  return new Date(s);
+}
+
+/** Local date as YYYY-MM-DD (matches a Postgres `date` column). */
+export function todayStr(d = new Date()) {
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+export function minutesSince(ts) {
+  const d = parseTs(ts);
+  return d ? Math.max(0, Math.round((Date.now() - d.getTime()) / 60000)) : 0;
 }
 
 export function fmtDateTime(ts) {
-  const d = parseMysql(ts);
+  const d = parseTs(ts);
   if (!d || isNaN(d)) return '';
   return `${fmtDate(d)}, ${d.getFullYear()} at ${fmtTime(`${d.getHours()}:${d.getMinutes()}:00`)}`;
 }

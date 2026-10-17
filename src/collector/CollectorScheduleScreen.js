@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import { useApi } from '../hooks';
+import { getCollectorSchedule } from '../data/collector';
 import { Card, Screen, ScreenTitle, StateView } from '../components/ui';
 import { type } from '../theme';
 import { fmtRange } from '../utils/schedule';
@@ -8,7 +9,7 @@ import { fmtRange } from '../utils/schedule';
 const WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export default function CollectorScheduleScreen() {
-  const { data, error, loading, refreshing, reload, pull } = useApi('collector/schedule.php');
+  const { data, error, loading, refreshing, reload, pull } = useApi(getCollectorSchedule);
   const groups = WEEK.map((d) => ({ day: d, rows: (data ?? []).filter((s) => s.day_of_week === d) })).filter((g) => g.rows.length);
 
   return (

@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import * as Location from 'expo-location';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
-import { api } from '../api';
+import { sendLocation } from '../data/collector';
 
 const Ctx = createContext(null);
 export const useLocationShare = () => useContext(Ctx);
@@ -43,10 +43,7 @@ export function LocationShareProvider({ children }) {
           if (now - lastPostRef.current < 10000) return;
           lastPostRef.current = now;
           try {
-            await api('collector/location.php', {
-              method: 'POST',
-              body: { latitude: pos.coords.latitude, longitude: pos.coords.longitude },
-            });
+            await sendLocation(pos.coords.latitude, pos.coords.longitude);
             setLastSentAt(new Date());
             setError('');
           } catch (e) {

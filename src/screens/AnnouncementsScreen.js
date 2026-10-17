@@ -1,12 +1,13 @@
 import React from 'react';
 import { Text } from 'react-native';
 import { useApi } from '../hooks';
+import { getAnnouncements } from '../data/resident';
 import { Card, Screen, ScreenTitle, StateView } from '../components/ui';
 import { type } from '../theme';
 import { fmtDateTime } from '../utils/schedule';
 
 export default function AnnouncementsScreen() {
-  const { data, error, loading, refreshing, reload, pull } = useApi('announcements.php');
+  const { data, error, loading, refreshing, reload, pull } = useApi(getAnnouncements);
 
   return (
     <Screen refreshing={refreshing} onRefresh={pull}>

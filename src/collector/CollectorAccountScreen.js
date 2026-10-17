@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Text } from 'react-native';
-import { api } from '../api';
+import { getCollector } from '../data/collector';
 import { useAuth } from '../AuthContext';
 import { Button, Card, Screen, ScreenTitle } from '../components/ui';
 import { type } from '../theme';
@@ -11,7 +11,7 @@ export default function CollectorAccountScreen() {
   const share = useLocationShare();
   const [me, setMe] = useState(null);
 
-  useEffect(() => { api('session.php').then(setMe).catch(() => {}); }, []);
+  useEffect(() => { getCollector().then((c) => setMe({ full_name: `${c.first_name ?? ''} ${c.last_name ?? ''}`.trim(), email: c.email })).catch(() => {}); }, []);
 
   const confirmLogout = () =>
     Alert.alert(
@@ -32,7 +32,7 @@ export default function CollectorAccountScreen() {
         <Text style={[type.small, { marginTop: 10 }]}>Garbage collector</Text>
       </Card>
       <Text style={[type.small, { marginBottom: 16 }]}>
-        To change your route, truck or password, contact your barangay admin.
+        To change your route or truck, contact your barangay admin.
       </Text>
       <Button title="Log out" variant="ghost" onPress={confirmLogout} />
     </Screen>

@@ -59,7 +59,7 @@ export default function LoginScreen({ navigation }) {
         </Text>
       </Pressable>
       <Text style={[type.small, { textAlign: 'center', marginTop: 14 }]}>
-        Garbage collectors: log in with the account your barangay admin created.
+        Garbage collectors: your LGU admin creates your account. Log in with the email and password they gave you.
       </Text>
     </Screen>
   );

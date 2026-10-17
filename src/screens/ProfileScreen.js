@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
-import { api } from '../api';
+import { getMe, saveMe } from '../data/resident';
 import { useAuth } from '../AuthContext';
 import { Button, ErrorBanner, Field, Screen, StateView } from '../components/ui';
 import ZonePicker from '../components/ZonePicker';
@@ -17,7 +17,7 @@ export default function ProfileScreen() {
 
   const load = () => {
     setLoadError(null);
-    api('me.php')
+    getMe()
       .then((me) => {
         setEmail(me.email);
         setF({
@@ -36,7 +36,7 @@ export default function ProfileScreen() {
     setBusy(true);
     setError('');
     try {
-      const me = await api('me.php', { method: 'POST', body: f });
+      const me = await saveMe(f);
       setName(me.first_name);
       Alert.alert('Saved', 'Your profile was updated.');
     } catch (e) {

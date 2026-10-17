@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { api } from '../api';
+import { getToday, markDone } from '../data/collector';
 import { useApi } from '../hooks';
 import { Button, Card, ErrorBanner, Screen, StateView } from '../components/ui';
 import { colors, radius, type } from '../theme';
@@ -9,17 +9,14 @@ import { fmtRange, fmtTime } from '../utils/schedule';
 import { useLocationShare } from './LocationShare';
 
 export default function TodayScreen() {
-  const { data, error, loading, refreshing, reload, pull } = useApi('collector/today.php');
+  const { data, error, loading, refreshing, reload, pull } = useApi(getToday);
   const share = useLocationShare();
   const [busyId, setBusyId] = useState(null);
 
   const toggleDone = async (item) => {
     setBusyId(item.collection_schedule_id);
     try {
-      await api('collector/complete.php', {
-        method: 'POST',
-        body: { collection_schedule_id: item.collection_schedule_id, done: !item.done },
-      });
+      await markDone(item.collection_schedule_id, !item.done);
       await reload();
     } catch (e) {
       Alert.alert('Couldn’t update', e.message);

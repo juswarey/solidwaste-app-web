@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import * as Location from 'expo-location';
-import { api } from '../api';
+import { getFeedback, sendFeedback } from '../data/resident';
 import { useApi } from '../hooks';
 import { Button, Card, Chip, ErrorBanner, Field, Screen, ScreenTitle, StateView } from '../components/ui';
 import { colors, radius, type } from '../theme';
@@ -14,7 +14,7 @@ const STATUS = {
 };
 
 export default function ReportScreen() {
-  const { data, error, loading, refreshing, reload, pull } = useApi('feedback.php');
+  const { data, error, loading, refreshing, reload, pull } = useApi(getFeedback);
   const [tab, setTab] = useState('new');
   const [reportType, setReportType] = useState('');
   const [description, setDescription] = useState('');
@@ -43,10 +43,7 @@ export default function ReportScreen() {
     setBusy(true);
     setFormError('');
     try {
-      await api('feedback.php', {
-        method: 'POST',
-        body: { report_type: reportType, description: description.trim(), ...(coords ?? {}) },
-      });
+      await sendFeedback({ report_type: reportType, description: description.trim(), ...(coords ?? {}) });
       setReportType('');
       setDescription('');
       setCoords(null);

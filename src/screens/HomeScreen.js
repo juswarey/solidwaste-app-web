@@ -3,6 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../AuthContext';
 import { useApi } from '../hooks';
+import { getSchedule } from '../data/resident';
 import { Button, Card, Screen, StateView } from '../components/ui';
 import { colors, radius, type } from '../theme';
 import { fmtRange, nextPickup } from '../utils/schedule';
@@ -16,7 +17,7 @@ function greeting() {
 
 export default function HomeScreen({ navigation }) {
   const { name } = useAuth();
-  const { data, error, loading, refreshing, reload, pull } = useApi('schedule.php');
+  const { data, error, loading, refreshing, reload, pull } = useApi(getSchedule);
 
   const schedules = data?.schedules ?? [];
   const next = useMemo(() => (schedules.length ? nextPickup(schedules) : null), [data]);

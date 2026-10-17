@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useApi } from '../hooks';
+import { getWasteCategories } from '../data/resident';
 import { Card, Screen, ScreenTitle, StateView } from '../components/ui';
 import { colors, type } from '../theme';
 
 export default function GuideScreen() {
-  const { data, error, loading, refreshing, reload, pull } = useApi('waste_categories.php');
+  const { data, error, loading, refreshing, reload, pull } = useApi(getWasteCategories);
   const [open, setOpen] = useState(null);
 
   return (

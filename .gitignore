@@ -39,3 +39,9 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# secrets
+.env
+
+# secrets for scripts/seed-lgu-admin.mjs (service-role key!)
+.env.seed

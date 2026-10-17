@@ -6,6 +6,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useAuth } from '../AuthContext';
+import { configured } from '../lib/supabase';
+import { Button, Screen, ScreenTitle } from '../components/ui';
 import { colors } from '../theme';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -82,14 +84,49 @@ const theme = {
   colors: { ...DefaultTheme.colors, background: colors.bg, primary: colors.primary, card: colors.surface, text: colors.text, border: colors.border },
 };
 
+function Notice({ title, text, children }) {
+  return (
+    <Screen style={{ paddingTop: 80 }}>
+      <ScreenTitle sub={text}>{title}</ScreenTitle>
+      {children}
+    </Screen>
+  );
+}
+
 export default function RootNavigator() {
-  const { loading, signedIn, role } = useAuth();
+  const { loading, signedIn, role, roles, profileError, signOut } = useAuth();
+
+  if (!configured) {
+    return (
+      <Notice
+        title="Supabase isn’t set up"
+        text="Copy .env.example to .env, fill in EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY, then restart Expo with: npx expo start -c"
+      />
+    );
+  }
 
   if (loading) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg }}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
+    );
+  }
+
+  // Signed in, but with no role this app can use (admins use the website).
+  if (signedIn && !role) {
+    const isAdmin = roles.includes('lgu_admin') || roles.includes('barangay_admin');
+    return (
+      <Notice
+        title={isAdmin ? 'Admins use the website' : 'Account not ready'}
+        text={
+          isAdmin
+            ? 'Your account is an LGU / barangay admin account. Please open the ECollect web portal on a computer.'
+            : profileError || 'We could not find a resident or collector profile for this account.'
+        }
+      >
+        <Button title="Log out" variant="ghost" onPress={signOut} />
+      </Notice>
     );
   }
 

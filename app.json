@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "solidwaste-resident-app",
-    "slug": "solidwaste-resident-app",
+    "name": "ECollect",
+    "slug": "ecollect",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -18,10 +18,10 @@
       }
     },
     "web": {
+      "bundler": "metro",
+      "output": "single",
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-secure-store"
-    ]
+    "plugins": []
   }
 }

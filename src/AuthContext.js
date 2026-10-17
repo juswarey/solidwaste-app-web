@@ -1,60 +1,101 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { api, clearToken, getRole, getToken, saveRole, saveToken, setUnauthorizedHandler } from './api';
+import { AppState, Platform } from 'react-native';
+import { supabase, explain } from './lib/supabase';
 
-const AuthContext = createContext(null);
-export const useAuth = () => useContext(AuthContext);
+const Ctx = createContext(null);
+export const useAuth = () => useContext(Ctx);
 
-const SIGNED_OUT = { loading: false, signedIn: false, role: null, name: '' };
+// Database role name -> short name used by the app
+const NORMAL = { lgu_admin: 'lgu_admin', barangay_admin: 'barangay_admin', garbage_collector: 'collector', resident: 'resident' };
+
+// The website is for admins, the phone app is for collectors and residents.
+export const IS_WEB = Platform.OS === 'web';
+const ALLOWED = IS_WEB ? ['lgu_admin', 'barangay_admin'] : ['collector', 'resident'];
 
 export function AuthProvider({ children }) {
-  const [state, setState] = useState({ ...SIGNED_OUT, loading: true });
+  const [session, setSession] = useState(undefined);   // undefined = still checking
+  const [profiles, setProfiles] = useState(null);      // null = still loading
+  const [profileError, setProfileError] = useState('');
+  const [chosen, setChosen] = useState(null);
 
-  const reset = useCallback(async () => {
-    await clearToken();
-    setState(SIGNED_OUT);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
+    const { data } = supabase.auth.onAuthStateChange((_event, s) => setSession(s ?? null));
+    return () => data.subscription.unsubscribe();
   }, []);
 
-  // Restore the session when the app starts.
+  // Keep tokens fresh while the phone app is in the foreground.
   useEffect(() => {
-    setUnauthorizedHandler(reset);
-    (async () => {
-      const token = await getToken();
-      if (!token) return setState(SIGNED_OUT);
-      try {
-        const s = await api('session.php');
-        await saveRole(s.role);
-        setState({ loading: false, signedIn: true, role: s.role, name: s.name });
-      } catch {
-        // Offline: keep the user in if we still know their role.
-        // (An expired token is cleared by the 401 handler instead.)
-        const stillHasToken = await getToken();
-        const role = await getRole();
-        setState(stillHasToken && role ? { loading: false, signedIn: true, role, name: '' } : SIGNED_OUT);
-      }
-    })();
-  }, [reset]);
+    if (IS_WEB) return undefined;
+    const sub = AppState.addEventListener('change', (st) => {
+      if (st === 'active') supabase.auth.startAutoRefresh();
+      else supabase.auth.stopAutoRefresh();
+    });
+    return () => sub.remove();
+  }, []);
 
-  const finishAuth = async (data) => {
-    await saveToken(data.token);
-    await saveRole(data.role);
-    setState({ loading: false, signedIn: true, role: data.role, name: data.name });
-  };
+  const loadProfiles = useCallback(async () => {
+    const { data, error } = await supabase.rpc('my_profile');
+    if (error) throw new Error(explain(error));
+    setProfiles(data ?? []);
+    setProfileError('');
+  }, []);
+
+  const uid = session?.user?.id ?? null;
+  const checking = session === undefined;
+
+  useEffect(() => {
+    if (checking) return;
+    if (!uid) { setProfiles([]); setChosen(null); setProfileError(''); return; }
+    setProfiles(null);
+    loadProfiles().catch((e) => { setProfiles([]); setProfileError(e.message); });
+  }, [uid, checking, loadProfiles]);
+
+  const roles = useMemo(() => (profiles ?? []).map((p) => NORMAL[p.r_role]), [profiles]);
+  const role = useMemo(
+    () => (chosen && roles.includes(chosen) && ALLOWED.includes(chosen) ? chosen : ALLOWED.find((r) => roles.includes(r)) ?? null),
+    [chosen, roles]
+  );
+  const active = (profiles ?? []).find((p) => NORMAL[p.r_role] === role) ?? null;
+
+  const afterSignUp = (data) => ({ needsEmailConfirm: !data.session });
 
   const value = useMemo(
     () => ({
-      ...state,
-      signIn: async (email, password) =>
-        finishAuth(await api('login.php', { method: 'POST', body: { email, password }, auth: false })),
-      register: async (payload) =>
-        finishAuth(await api('register.php', { method: 'POST', body: payload, auth: false })),
-      signOut: async () => {
-        try { await api('logout.php', { method: 'POST' }); } catch { /* ignore */ }
-        await reset();
+      loading: checking || (!!uid && profiles === null),
+      signedIn: !!uid,
+      email: session?.user?.email ?? '',
+      role,                                   // role for THIS platform, or null (wrong platform / no access yet)
+      roles,
+      availableRoles: roles.filter((r) => ALLOWED.includes(r)),
+      profileId: active?.r_id ?? null,        // lgu_admin_id / barangay_admin_id / garbage_collector_id / resident_id
+      name: active?.r_first_name ?? '',
+      fullName: active ? `${active.r_first_name ?? ''} ${active.r_last_name ?? ''}`.trim() : '',
+      profileError,
+      setRole: setChosen,
+      setName: (n) => setProfiles((ps) => (ps ?? []).map((p) => (NORMAL[p.r_role] === role ? { ...p, r_first_name: n } : p))),
+      refreshProfiles: loadProfiles,
+
+      signIn: async (email, password) => {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw new Error(explain(error));
       },
-      setName: (name) => setState((s) => ({ ...s, name })),
+
+      /** Public sign-up. This ONLY ever creates a resident (the database trigger enforces it). */
+      register: async ({ email, password, first_name, last_name, contact_number, home_address, route_id }) => {
+        const meta = { first_name, last_name, contact_number, home_address, route_id: route_id ?? null };
+        const { data, error } = await supabase.auth.signUp({ email, password, options: { data: meta } });
+        if (error) throw new Error(explain(error));
+        return afterSignUp(data);
+      },
+
+      signOut: async () => {
+        await supabase.auth.signOut();
+        setChosen(null);
+      },
     }),
-    [state, reset]
+    [checking, uid, session, role, roles, active, profiles, profileError, loadProfiles]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Text, View } from 'react-native';
 import MapView, { Polyline } from 'react-native-maps';
 import { useApi } from '../hooks';
+import { getCollectorRoute } from '../data/collector';
 import { Card, Screen, ScreenTitle, StateView } from '../components/ui';
 import { colors, radius, type } from '../theme';
 import { fmtRange } from '../utils/schedule';
@@ -17,7 +18,7 @@ function Row({ label, value }) {
 }
 
 export default function CollectorRouteScreen() {
-  const { data, error, loading, refreshing, reload, pull } = useApi('collector/route.php');
+  const { data, error, loading, refreshing, reload, pull } = useApi(getCollectorRoute);
   const region = useMemo(() => regionFor(data?.route_path ?? []), [loading]);
 
   return (
@@ -32,7 +33,6 @@ export default function CollectorRouteScreen() {
               <Text style={[type.heading, { marginBottom: 6 }]}>{data.route.zone_name || 'Your route'}</Text>
               <Row label="Collection days" value={(data.route.collection_days || '—').replace(/,/g, ', ')} />
               <Row label="Time" value={fmtRange(data.route.start_time, data.route.end_time)} />
-              {data.route.assigned_by ? <Row label="Assigned by" value={data.route.assigned_by} /> : null}
             </Card>
           ) : (
             <Card>
