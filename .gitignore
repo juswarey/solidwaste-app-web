@@ -1,47 +1,29 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-
-# dependencies
 node_modules/
-
-# Expo
-.expo/
 dist/
+.expo/
 web-build/
 expo-env.d.ts
-
-# Native
-.kotlin/
-*.orig.*
+*.tsbuildinfo
+.DS_Store
+*.pem
 *.jks
 *.p8
 *.p12
 *.key
 *.mobileprovision
-
-# Metro
 .metro-health-check*
-
-# debug
 npm-debug.*
 yarn-debug.*
 yarn-error.*
-
-# macOS
-.DS_Store
-*.pem
-
-# local env files
-.env*.local
-
-# typescript
-*.tsbuildinfo
-
-# generated native folders
-/ios
-/android
+.kotlin/
+/mobile/ios
+/mobile/android
 
 # secrets
 .env
-
-# secrets for scripts/seed-lgu-admin.mjs (service-role key!)
+.env.local
+.env*.local
+# service-role key for scripts/seed-lgu-admin.mjs
 .env.seed
+# Firebase service-account key
+*-firebase-adminsdk-*.json

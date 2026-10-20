@@ -8,7 +8,7 @@
 //        LGU_ADMIN_FIRST_NAME=LGU  LGU_ADMIN_LAST_NAME=Admin   (optional)
 //   2. npm run seed:lgu
 //
-// Run supabase/step4_accounts.sql first. Safe to re-run: it never creates a second default admin.
+// Run supabase/setup/01-04 first. Safe to re-run: it never creates a second default admin.
 
 import { randomBytes } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
@@ -75,7 +75,11 @@ if (saveErr) {
   die('Could not save the lgu_admin record', saveErr);
 }
 
+// A staff login must not also become a resident (Supabase Auth saves app_metadata after the
+// sign-up trigger runs; supabase/setup/02_security.sql cleans this up too).
+if (created) await sb.from('resident').delete().eq('auth_user_id', userId);
+
 console.log('\nDefault LGU admin ready.');
 console.log(`  Email:    ${email}`);
 if (created) console.log(`  Password: ${password}${generated ? '   (generated — save it now, it is not stored anywhere)' : ''}`);
-console.log('Log in on the website (npm run web) with these details.');
+console.log('Sign in on the website (cd web && npm run dev) with these details.');
